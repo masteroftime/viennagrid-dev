@@ -85,6 +85,9 @@ target_link_libraries(point_ntree viennagridpp)
 add_executable(netgen_c_reader    netgen_c_reader.cpp)
 target_link_libraries(netgen_c_reader viennagridpp)
 
+add_executable(stl_c_reader    stl_c_reader.cpp)
+target_link_libraries(stl_c_reader viennagridpp)
+
 # Old (TODO cleanup, merge to tests)
 #add_executable(collection_test              old/collection_test.cpp)
 #add_executable(container_collection_test_2  old/container_collection_test_2.cpp)

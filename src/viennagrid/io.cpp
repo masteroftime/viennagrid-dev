@@ -145,6 +145,11 @@ viennagrid_error viennagrid_mesh_io_filetype_from_filename(const char * filename
     *filetype = VIENNAGRID_FILETYPE_NETGEN_MESH;
     return VIENNAGRID_SUCCESS;
   }
+  if ( extension_found(fn.c_str(), "stl") )
+  {
+    *filetype = VIENNAGRID_FILETYPE_STL;
+    return VIENNAGRID_SUCCESS;
+  }
 
   *filetype = VIENNAGRID_FILETYPE_UNKNOWN;
   return VIENNAGRID_ERROR_IO_UNKNOWN_FILETYPE;
@@ -184,6 +189,8 @@ viennagrid_error viennagrid_mesh_io_read_with_filetype(viennagrid_mesh_io mesh_i
   {
     case VIENNAGRID_FILETYPE_NETGEN_MESH:
       return viennagrid_mesh_io_read_netgen(mesh_io, filename);
+    case VIENNAGRID_FILETYPE_STL:
+      return viennagrid_mesh_io_read_stl(mesh_io, filename);
   }
 
   return VIENNAGRID_ERROR_IO_UNKNOWN_FILETYPE;

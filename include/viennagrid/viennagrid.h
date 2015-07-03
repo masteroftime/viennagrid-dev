@@ -110,6 +110,7 @@ typedef struct viennagrid_mesh_io_ * viennagrid_mesh_io;
 /* VIENNAGRID FILETYPES */
 #define VIENNAGRID_FILETYPE_UNKNOWN                 0
 #define VIENNAGRID_FILETYPE_NETGEN_MESH             1
+#define VIENNAGRID_FILETYPE_STL                     2
 
 /* QUANTITY FIELD STORAGE TYPES */
 #define VIENNAGRID_QUANTITY_FIELD_STORAGE_DENSE     0
