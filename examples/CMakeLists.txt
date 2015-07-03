@@ -40,6 +40,7 @@ set(EXAMPLES_TESTDATA
    data/cubeception.poly
    data/example.poly
    data/two_cubes.poly
+   data/testcube.stl
    )
 foreach(f ${EXAMPLES_TESTDATA})
    configure_file(${f} "${CMAKE_CURRENT_BINARY_DIR}/${f}" COPYONLY)
