@@ -25,7 +25,7 @@ int main()
   // Define the necessary types:
   //
 
-  typedef viennagrid::mesh_hierarchy_t MeshHierarchyType;
+  typedef viennagrid::mesh_hierarchy MeshHierarchyType;
   typedef viennagrid::result_of::mesh<MeshHierarchyType>::type MeshType;
 
 
@@ -43,12 +43,12 @@ int main()
   viennagrid_mesh_io_create(&mesh_io);
   viennagrid_mesh_io_mesh_set(mesh_io, mesh.internal());
 
-  viennagrid_mesh_io_read( mesh_io, "../data/testcube.stl" );
+  viennagrid_mesh_io_read( mesh_io, "../data/porsche.stl" );
 
   viennagrid_mesh_io_release(mesh_io);
 
   viennagrid::io::vtk_writer<MeshType> writer;
-  writer(mesh, "netgen_c_reader");
+  writer(mesh, "stl_c_reader");
 
 
   std::cout << "-----------------------------------------------" << std::endl;
