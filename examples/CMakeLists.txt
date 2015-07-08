@@ -41,7 +41,9 @@ set(EXAMPLES_TESTDATA
    data/example.poly
    data/two_cubes.poly
    data/testcube.stl
+   data/ascii_cube.stl
    data/porsche.stl
+   data/ascii_bottle.stl
    )
 foreach(f ${EXAMPLES_TESTDATA})
    configure_file(${f} "${CMAKE_CURRENT_BINARY_DIR}/${f}" COPYONLY)

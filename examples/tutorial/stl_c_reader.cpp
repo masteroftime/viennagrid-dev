@@ -43,7 +43,7 @@ int main()
   viennagrid_mesh_io_create(&mesh_io);
   viennagrid_mesh_io_mesh_set(mesh_io, mesh.internal());
 
-  viennagrid_mesh_io_read( mesh_io, "../data/porsche.stl" );
+  viennagrid_mesh_io_read( mesh_io, "../data/ascii_bottle.stl" );
 
   viennagrid_mesh_io_release(mesh_io);
 
