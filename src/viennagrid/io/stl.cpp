@@ -3,18 +3,19 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <map>
 #include <string>
 #include <sstream>
 #include <cstring>
+#include <boost/cstdint.hpp>
+#include <boost/array.hpp>
+
 
 viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
                                                         const char * filename);
 
 viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
                                                         const char * filename);
-
-void create_unique_vertex(viennagrid_mesh mesh,
-        const viennagrid_numeric * vertex_data, viennagrid_int * vertex_id);
 
 
 viennagrid_error viennagrid_mesh_io_read_stl(viennagrid_mesh_io mesh_io,
@@ -59,10 +60,9 @@ viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
   viennagrid_mesh_geometric_dimension_set(mesh, 3);
 
   uint32_t facet_count;
-  //viennagrid_int vertex_count = 0;
   float vertex_buf[3];  // buffer for reading vertex data
-  viennagrid_numeric vertex_data[3];  // vertex data converted to viennagrid_numeric type
   viennagrid_int vertex_ids[3];  //stores the vertex ids making up a triangle
+  std::map<boost::array<viennagrid_numeric, 3>, viennagrid_int> id_map; //used to lookup if a vertex already exists
   
   // first 80 bytes are header
   reader.ignore(80);
@@ -84,10 +84,20 @@ viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
         return VIENNAGRID_ERROR_IO_EOF_WHILE_READING_VERTICES;
       }
       
-      //convert read data to viennagrid_numeric
-      std::copy(vertex_buf, vertex_buf+3, vertex_data);
-          
-      create_unique_vertex(mesh, vertex_data, &vertex_ids[j]);
+      boost::array<viennagrid_numeric, 3> v;
+      std::copy(vertex_buf, vertex_buf+3, v.begin());
+      
+      std::map<boost::array<viennagrid_numeric, 3>, viennagrid_int>::const_iterator it = id_map.find(v);
+      
+      if(it == id_map.end())
+      {
+        viennagrid_mesh_vertex_create(mesh, &v[0], &vertex_ids[j]);
+        id_map[v] = vertex_ids[j];
+      }
+      else
+      {
+        vertex_ids[j] = it->second;
+      }
     }
 
     viennagrid_mesh_element_create(mesh, VIENNAGRID_ELEMENT_TYPE_TRIANGLE, 3, vertex_ids, NULL);
@@ -118,9 +128,9 @@ viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
   std::string tmp;
   std::string command;
   
-  viennagrid_numeric vertex_data[3];
   viennagrid_int vertex_ids[3];
   viennagrid_int vertex_count = 0;
+  std::map<boost::array<viennagrid_numeric, 3>, viennagrid_int> id_map;
   
   //skip the first line "solid ..."
   getline(reader, tmp);
@@ -137,8 +147,20 @@ viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
       if(vertex_count > 2)
         return VIENNAGRID_ERROR_IO_INVALID_VERTEX_COUNT;
       
-      line >> vertex_data[0] >> vertex_data[1] >> vertex_data[2];
-      create_unique_vertex(mesh, vertex_data, &vertex_ids[vertex_count]);
+      boost::array<viennagrid_numeric, 3> v;
+      line >> v[0] >> v[1] >> v[2];
+      
+      std::map<boost::array<viennagrid_numeric, 3>, viennagrid_int>::const_iterator it = id_map.find(v);
+      
+      if(it == id_map.end())
+      {
+        viennagrid_mesh_vertex_create(mesh, &v[0], &vertex_ids[vertex_count]);
+        id_map[v] = vertex_ids[vertex_count];
+      }
+      else
+      {
+        vertex_ids[vertex_count] = it->second;
+      }
       
       ++vertex_count;
     }
@@ -158,38 +180,4 @@ viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
   }
   
   return VIENNAGRID_SUCCESS;
-}
-
-void create_unique_vertex(viennagrid_mesh mesh,
-        const viennagrid_numeric * vertex_data, viennagrid_int * vertex_id)
-{
-  viennagrid_mesh_hierarchy mesh_hierarchy;
-  viennagrid_mesh_mesh_hierarchy_get(mesh, &mesh_hierarchy);
-  
-  viennagrid_numeric * vertex_coords;
-  viennagrid_mesh_hierarchy_vertex_coords_pointer(mesh_hierarchy, &vertex_coords);
-  
-  viennagrid_int id = -1;
-  viennagrid_int vertex_count;
-  
-  viennagrid_mesh_hierarchy_element_count(mesh_hierarchy, VIENNAGRID_ELEMENT_TYPE_VERTEX, &vertex_count);
-  
-  // every vertex is saved multiple times, once for every facet it appears in.
-  // check if the read vertex has already appeared before, and if yes obtain its id.
-  for(viennagrid_int k = vertex_count-1; k >= 0; --k)
-  {
-    if(std::equal(vertex_data, vertex_data+3, vertex_coords+(k*3)))
-    {
-      id = k;
-      break;
-    }
-  }
-  
-  // if it didn't appear, create a new vertex.
-  if(id < 0)
-  {
-    viennagrid_mesh_vertex_create(mesh,vertex_data, &id);
-  }
-  
-  *vertex_id = id;
 }
