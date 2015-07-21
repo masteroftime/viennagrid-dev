@@ -9,9 +9,10 @@
 #include <cstring>
 #include <boost/cstdint.hpp>
 #include <boost/array.hpp>
+#include <boost/unordered_map.hpp>
 
 typedef boost::array<viennagrid_numeric, 3>  VertexType;
-typedef std::map<VertexType, viennagrid_int> IdMapType;
+typedef boost::unordered_map<VertexType, viennagrid_int> IdMapType;
 
 
 viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
