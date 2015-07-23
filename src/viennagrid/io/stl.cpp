@@ -3,7 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <map>
+#include <vector>
 #include <string>
 #include <sstream>
 #include <cstring>
@@ -15,11 +15,13 @@ typedef boost::array<viennagrid_numeric, 3>  VertexType;
 typedef boost::unordered_map<VertexType, viennagrid_int> IdMapType;
 
 
-viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
+viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh mesh,
                                                         const char * filename);
 
-viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
+viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh mesh,
                                                         const char * filename);
+
+viennagrid_int create_unique_vertex(viennagrid_mesh mesh, IdMapType &id_map, const VertexType &v);
 
 
 viennagrid_error viennagrid_mesh_io_read_stl(viennagrid_mesh_io mesh_io,
@@ -41,13 +43,18 @@ viennagrid_error viennagrid_mesh_io_read_stl(viennagrid_mesh_io mesh_io,
   
   file.close();
   
+  viennagrid_mesh mesh;
+  viennagrid_mesh_io_mesh_get(mesh_io, &mesh);
+  
+  viennagrid_mesh_geometric_dimension_set(mesh, 3);
+  
   if (strcmp(header, "solid") == 0)
-    return viennagrid_mesh_io_read_stl_ascii(mesh_io, filename);
+    return viennagrid_mesh_io_read_stl_ascii(mesh, filename);
   else
-    return viennagrid_mesh_io_read_stl_binary(mesh_io, filename);
+    return viennagrid_mesh_io_read_stl_binary(mesh, filename);
 }
 
-viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
+viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh mesh,
                                                         const char * filename)
 {
   std::ifstream reader(filename, std::ios::in | std::ios::binary);
@@ -57,11 +64,6 @@ viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
 
   if (!reader.good())
     return VIENNAGRID_ERROR_IO_FILE_EMPTY;
-
-  viennagrid_mesh mesh;
-  viennagrid_mesh_io_mesh_get(mesh_io, &mesh);
-  
-  viennagrid_mesh_geometric_dimension_set(mesh, 3);
 
   uint32_t facet_count; // number of facets in the file
   float vertex_buf[3];  // buffer for reading vertex data
@@ -91,20 +93,7 @@ viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
       VertexType v;
       std::copy(vertex_buf, vertex_buf+3, v.begin());
       
-      // check if the given vertex has already been read before
-      IdMapType::const_iterator it = id_map.find(v);
-      
-      if(it == id_map.end())
-      {
-        // if this is a new vertex, add it to the mesh and the map
-        viennagrid_mesh_vertex_create(mesh, &v[0], &vertex_ids[j]);
-        id_map[v] = vertex_ids[j];
-      }
-      else
-      {
-        // if the vertex alreay exists retrieve its id from the map
-        vertex_ids[j] = it->second;
-      }
+      vertex_ids[j] = create_unique_vertex(mesh, id_map, v);
     }
 
     viennagrid_mesh_element_create(mesh, VIENNAGRID_ELEMENT_TYPE_TRIANGLE, 3, vertex_ids, NULL);
@@ -116,7 +105,7 @@ viennagrid_error viennagrid_mesh_io_read_stl_binary(viennagrid_mesh_io mesh_io,
   return VIENNAGRID_SUCCESS;
 }
 
-viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
+viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh mesh,
                                                         const char * filename)
 {
   std::ifstream reader(filename);
@@ -127,18 +116,11 @@ viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
   if (!reader.good())
     return VIENNAGRID_ERROR_IO_FILE_EMPTY;
   
-  viennagrid_mesh mesh;
-  viennagrid_mesh_io_mesh_get(mesh_io, &mesh);
-  
-  viennagrid_mesh_geometric_dimension_set(mesh, 3);
-  
   std::string tmp;
   std::string command;
   
-  // store the vertex ids that form a triangle
-  viennagrid_int vertex_ids[3];
-  // used to keep track of how many vetices have been read for the current triangle
-  viennagrid_int vertex_count = 0;
+  // store the vertex ids that form a facet
+  std::vector<viennagrid_int> vertex_ids;
   // used to lookup if a vertex already exists
   IdMapType id_map;
   
@@ -153,10 +135,7 @@ viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
     line >> command;
     
     if(command == "vertex")
-    {
-      if(vertex_count > 2)
-        return VIENNAGRID_ERROR_IO_INVALID_VERTEX_COUNT;
-      
+    {      
       VertexType v;
       line >> v[0] >> v[1] >> v[2];
       
@@ -164,31 +143,16 @@ viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
       if(!line)
         return VIENNAGRID_ERROR_IO_VERTEX_DIMENSION_MISMATCH;
       
-      // check if the given vertex has already been read before
-      IdMapType::const_iterator it = id_map.find(v);
-      
-      if(it == id_map.end())
-      {
-        // if this is a new vertex, add it to the mesh and the map
-        viennagrid_mesh_vertex_create(mesh, &v[0], &vertex_ids[vertex_count]);
-        id_map[v] = vertex_ids[vertex_count];
-      }
-      else
-      {
-        // if the vertex alreay exists retrieve its id from the map
-        vertex_ids[vertex_count] = it->second;
-      }
-      
-      ++vertex_count;
+      vertex_ids.push_back(create_unique_vertex(mesh, id_map, v));
     }
     else if(command == "endloop")
     {
-        if(vertex_count != 3)
+        if(vertex_ids.size() != 3)
           return VIENNAGRID_ERROR_IO_INVALID_VERTEX_COUNT;
         
-        viennagrid_mesh_element_create(mesh, VIENNAGRID_ELEMENT_TYPE_TRIANGLE, 3, vertex_ids, NULL);
+        viennagrid_mesh_element_create(mesh, VIENNAGRID_ELEMENT_TYPE_TRIANGLE, 3, &vertex_ids[0], NULL);
         
-        vertex_count = 0;
+        vertex_ids.clear();
     }
     else if(command == "endsolid")
     {
@@ -197,4 +161,24 @@ viennagrid_error viennagrid_mesh_io_read_stl_ascii(viennagrid_mesh_io mesh_io,
   }
   
   return VIENNAGRID_ERROR_IO_EOF_ENCOUNTERED;
+}
+
+viennagrid_int create_unique_vertex(viennagrid_mesh mesh, IdMapType &id_map, const VertexType &v)
+{
+  // check if the given vertex has already been read before
+  IdMapType::const_iterator it = id_map.find(v);
+  
+  if(it == id_map.end())
+  {
+    // if this is a new vertex, add it to the mesh and the map
+    viennagrid_int id;
+    viennagrid_mesh_vertex_create(mesh, &v[0], &id);
+    id_map[v] = id;
+    return id;
+  }
+  else
+  {
+    // if the vertex alreay exists retrieve its id from the map
+    return it->second;
+  }
 }
