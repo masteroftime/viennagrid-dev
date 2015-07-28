@@ -219,6 +219,44 @@ public:
 
 const float STLBinaryWriter::zero_vector[] = {0,0,0};
 
+
+class STLAsciiWriter {
+  std::ofstream file;
+  
+public:
+  STLAsciiWriter(const char* filename)
+    : file(filename) {}
+  
+  void file_start()
+  {
+    file << "solid" << std::endl;
+  }
+  
+  void file_end()
+  {
+    file << "endsolid" << std::endl;
+  }
+  
+  void facet_start()
+  {
+    file << "facet normal 0.0 0.0 0.0" << std::endl
+      << "outer loop" << std::endl;
+  }
+  
+  void facet_end()
+  {
+    file << "endloop" << std::endl << "endfacet" << std::endl;
+  }
+  
+  void vertex(const viennagrid_numeric* vertex_coords)
+  {
+    file << "vertex " 
+      << vertex_coords[0] << " "
+      << vertex_coords[1] << " "
+      << vertex_coords[2] << std::endl;
+  }
+};
+
 template <class Writer>
 void stl_write_facets(viennagrid_mesh mesh, Writer &writer)
 {
@@ -278,6 +316,14 @@ viennagrid_error viennagrid_mesh_io_write_stl_binary(viennagrid_mesh_io mesh_io,
 viennagrid_error viennagrid_mesh_io_write_stl_ascii(viennagrid_mesh_io mesh_io,
                                                 const char * filename)
 {
-  std::cout << "Write STL ASCII" << std::endl;
+  viennagrid_mesh mesh;
+  viennagrid_mesh_io_mesh_get(mesh_io, &mesh);
+  
+  STLAsciiWriter writer(filename);
+  
+  writer.file_start();
+  stl_write_facets<STLAsciiWriter>(mesh, writer);
+  writer.file_end();
+  
   return VIENNAGRID_SUCCESS;
 }

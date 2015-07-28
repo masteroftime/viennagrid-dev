@@ -46,7 +46,7 @@ int main()
   
   if(error == VIENNAGRID_SUCCESS)
   {
-    viennagrid_mesh_io_write_with_filetype(mesh_io, "stl_c_reader.stl", VIENNAGRID_FILETYPE_STL_BINARY);
+    viennagrid_mesh_io_write_with_filetype(mesh_io, "stl_c_reader.stl", VIENNAGRID_FILETYPE_STL_ASCII);
 
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << " \\o/    Tutorial finished successfully!    \\o/ " << std::endl;
