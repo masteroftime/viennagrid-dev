@@ -215,6 +215,30 @@ viennagrid_error viennagrid_mesh_io_read(viennagrid_mesh_io mesh_io,
 
 
 
+viennagrid_error viennagrid_mesh_io_write_with_filetype(viennagrid_mesh_io mesh_io,
+                                                          const char * filename,
+                                                          viennagrid_int filetype)
+{
+  switch(filetype)
+  {
+    case VIENNAGRID_FILETYPE_STL:
+    case VIENNAGRID_FILETYPE_STL_ASCII:
+      return viennagrid_mesh_io_write_stl_ascii(mesh_io, filename);
+    case VIENNAGRID_FILETYPE_STL_BINARY:
+      return viennagrid_mesh_io_write_stl_binary(mesh_io, filename);
+  }
+}
 
 
+viennagrid_error viennagrid_mesh_io_write(viennagrid_mesh_io mesh_io,
+                                            const char * filename)
+{
+  viennagrid_int filetype;
+  
+  viennagrid_error error = viennagrid_mesh_io_filetype_from_filename(filename, &filetype);
+  if(error != VIENNAGRID_SUCCESS)
+    return error;
+  
+  return viennagrid_mesh_io_write_with_filetype(mesh_io, filename, filetype);
+}
 

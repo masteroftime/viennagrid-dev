@@ -116,4 +116,10 @@ viennagrid_error viennagrid_mesh_io_read_netgen(viennagrid_mesh_io mesh_io,
 viennagrid_error viennagrid_mesh_io_read_stl(viennagrid_mesh_io mesh_io,
                                                 const char * filename);
 
+viennagrid_error viennagrid_mesh_io_write_stl_binary(viennagrid_mesh_io mesh_io,
+                                                const char * filename);
+
+viennagrid_error viennagrid_mesh_io_write_stl_ascii(viennagrid_mesh_io mesh_io,
+                                                const char * filename);
+
 #endif

@@ -274,3 +274,10 @@ viennagrid_error viennagrid_mesh_io_write_stl_binary(viennagrid_mesh_io mesh_io,
   
   return VIENNAGRID_SUCCESS;
 }
+
+viennagrid_error viennagrid_mesh_io_write_stl_ascii(viennagrid_mesh_io mesh_io,
+                                                const char * filename)
+{
+  std::cout << "Write STL ASCII" << std::endl;
+  return VIENNAGRID_SUCCESS;
+}

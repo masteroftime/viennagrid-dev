@@ -18,10 +18,6 @@
 #include "viennagridpp/io/vtk_writer.hpp"
 #include "viennagridpp/algorithm/refine.hpp"
 
-//use funtion directly because the api doesn't exist yet
-viennagrid_error viennagrid_mesh_io_write_stl_binary(viennagrid_mesh_io mesh_io,
-                                                const char * filename);
-
 int main()
 {
   //
@@ -45,18 +41,12 @@ int main()
 
   viennagrid_mesh_io mesh_io;
   viennagrid_mesh_io_create(&mesh_io);
-  viennagrid_mesh_io_mesh_set(mesh_io, mesh.internal());
 
   error = viennagrid_mesh_io_read( mesh_io, "../data/ascii_bottle.stl" );
-
-  //viennagrid_mesh_io_release(mesh_io);
   
   if(error == VIENNAGRID_SUCCESS)
   {
-    viennagrid_mesh_io_write_stl_binary(mesh_io, "stl_c_reader.stl");
-    
-    //viennagrid::io::vtk_writer<MeshType> writer;
-    //writer(mesh, "stl_c_reader");
+    viennagrid_mesh_io_write_with_filetype(mesh_io, "stl_c_reader.stl", VIENNAGRID_FILETYPE_STL_BINARY);
 
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << " \\o/    Tutorial finished successfully!    \\o/ " << std::endl;
