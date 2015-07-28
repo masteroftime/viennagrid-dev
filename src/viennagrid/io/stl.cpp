@@ -182,3 +182,95 @@ viennagrid_int create_unique_vertex(viennagrid_mesh mesh, IdMapType &id_map, con
     return it->second;
   }
 }
+
+class STLBinaryWriter {
+  static const float zero_vector[3];
+  std::ofstream file;
+  
+public:
+  STLBinaryWriter(const char* filename) 
+    : file(filename, std::ios::out | std::ios::binary) {}
+    
+  void header(uint32_t facet_count)
+  {
+    for(viennagrid_int i = 0; i < 80; ++i)
+      file.put(' ');
+  
+    file.write((char*)&facet_count, 4);
+  }
+  
+  void facet_start()
+  {
+    file.write((char*)zero_vector, sizeof(float) * 3);
+  }
+  
+  void facet_end()
+  {
+    file.write("\0\0", 2);
+  }
+  
+  void vertex(const viennagrid_numeric* vertex_coords)
+  {
+    float vertex_data[3];
+    std::copy(vertex_coords, vertex_coords+3, vertex_data);
+    file.write((char*)vertex_data, sizeof(float)*3);
+  }
+};
+
+const float STLBinaryWriter::zero_vector[] = {0,0,0};
+
+template <class Writer>
+void stl_write_facets(viennagrid_mesh mesh, Writer &writer)
+{
+  viennagrid_int *id, *id_end, *boundary_id, *boundary_id_end;
+  viennagrid_element_type type;
+  viennagrid_numeric *vertex_coords;
+  
+  viennagrid_mesh_hierarchy mesh_hierarchy;
+  viennagrid_mesh_mesh_hierarchy_get(mesh, &mesh_hierarchy);
+  
+  viennagrid_mesh_elements_get(mesh, 2, &id, &id_end);
+  
+  for(; id != id_end; ++id)
+  {
+    viennagrid_element_type_get(mesh_hierarchy, 2, *id, &type);
+    
+    if(type == VIENNAGRID_ELEMENT_TYPE_TRIANGLE)
+    {
+      writer.facet_start();
+      
+      viennagrid_element_boundary_elements(mesh_hierarchy, 2, *id,  0, &boundary_id, &boundary_id_end);
+      
+      for(; boundary_id != boundary_id_end; ++boundary_id)
+      {
+        viennagrid_mesh_hierarchy_vertex_coords_get(mesh_hierarchy, *boundary_id, &vertex_coords);
+        writer.vertex(vertex_coords);
+      }
+      
+      writer.facet_end();
+    }
+  }
+}
+
+viennagrid_error viennagrid_mesh_io_write_stl_binary(viennagrid_mesh_io mesh_io,
+                                                const char * filename)
+{
+  STLBinaryWriter writer(filename);
+  
+//   if (!writer)
+//     return VIENNAGRID_ERROR_IO_CANNOT_OPEN_FILE;
+  
+  viennagrid_mesh mesh;
+  viennagrid_mesh_hierarchy mesh_hierarchy;
+  viennagrid_mesh_io_mesh_get(mesh_io, &mesh);
+  viennagrid_mesh_mesh_hierarchy_get(mesh, &mesh_hierarchy);
+  
+  viennagrid_int tri_count;
+  
+  viennagrid_mesh_hierarchy_element_count(mesh_hierarchy, VIENNAGRID_ELEMENT_TYPE_TRIANGLE, &tri_count);
+  writer.header(tri_count);
+  
+  stl_write_facets<STLBinaryWriter>(mesh, writer);
+  
+  return VIENNAGRID_SUCCESS;
+}
