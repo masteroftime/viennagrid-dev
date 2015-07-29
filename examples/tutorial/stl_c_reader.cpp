@@ -42,11 +42,11 @@ int main()
   viennagrid_mesh_io mesh_io;
   viennagrid_mesh_io_create(&mesh_io);
 
-  error = viennagrid_mesh_io_read( mesh_io, "../data/ascii_bottle.stl" );
+  error = viennagrid_mesh_io_read( mesh_io, "../data/porsche.stl" );
   
   if(error == VIENNAGRID_SUCCESS)
   {
-    error = viennagrid_mesh_io_write_with_filetype(mesh_io, "stl_c_reader.stl", VIENNAGRID_FILETYPE_STL_ASCII);
+    error = viennagrid_mesh_io_write_with_filetype(mesh_io, "stl_c_reader.stl", VIENNAGRID_FILETYPE_STL_BINARY);
   }
 
   switch(error)

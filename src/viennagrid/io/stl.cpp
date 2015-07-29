@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <cstring>
+#include <cmath>
 #include <boost/cstdint.hpp>
 #include <boost/array.hpp>
 #include <boost/unordered_map.hpp>
@@ -199,9 +200,10 @@ public:
     file.write((char*)&facet_count, 4);
   }
   
-  void facet_start()
-  {
-    file.write((char*)zero_vector, sizeof(float) * 3);
+  void facet_start(viennagrid_numeric* normal) {
+    float normal_data[3];
+    std::copy(normal, normal+3, normal_data);
+    file.write((char*)normal_data, sizeof(float) * 3);
   }
   
   void facet_end()
@@ -245,9 +247,12 @@ public:
     file << "endsolid" << std::endl;
   }
   
-  void facet_start()
+  void facet_start(viennagrid_numeric* normal)
   {
-    file << "facet normal 0.0 0.0 0.0" << std::endl
+    file << "facet normal "
+      << normal[0] << " "
+      << normal[1] << " "
+      << normal[2] << std::endl
       << "outer loop" << std::endl;
   }
   
@@ -276,6 +281,7 @@ void stl_write_facets(viennagrid_mesh mesh, Writer &writer)
   viennagrid_int *id, *id_end, *boundary_id, *boundary_id_end;
   viennagrid_element_type type;
   viennagrid_numeric *vertex_coords;
+  std::vector<viennagrid_numeric*> facet;
   
   viennagrid_mesh_hierarchy mesh_hierarchy;
   viennagrid_mesh_mesh_hierarchy_get(mesh, &mesh_hierarchy);
@@ -288,17 +294,46 @@ void stl_write_facets(viennagrid_mesh mesh, Writer &writer)
     
     if(type == VIENNAGRID_ELEMENT_TYPE_TRIANGLE)
     {
-      writer.facet_start();
-      
       viennagrid_element_boundary_elements(mesh_hierarchy, 2, *id,  0, &boundary_id, &boundary_id_end);
       
       for(; boundary_id != boundary_id_end; ++boundary_id)
       {
         viennagrid_mesh_hierarchy_vertex_coords_get(mesh_hierarchy, *boundary_id, &vertex_coords);
-        writer.vertex(vertex_coords);
+        facet.push_back(vertex_coords);
+      }
+      
+      viennagrid_numeric a[] = {
+        facet[1][0]-facet[0][0],
+        facet[1][1]-facet[0][1],
+        facet[1][2]-facet[0][2]
+      };
+      viennagrid_numeric b[] = {
+        facet[2][0]-facet[0][0],
+        facet[2][1]-facet[0][1],
+        facet[2][2]-facet[0][2]
+      };
+      
+      viennagrid_numeric n[] = {
+        a[1]*b[2] - a[2]*b[1],
+        a[2]*b[0] - a[0]*b[2],
+        a[0]*b[1] - a[1]*b[0]
+      };
+      
+      viennagrid_numeric len;
+      len = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+      n[0] /= len;
+      n[1] /= len;
+      n[2] /= len;
+      
+      writer.facet_start(n);
+      
+      for(std::vector<viennagrid_numeric*>::const_iterator it = facet.begin(); it != facet.end(); ++it)
+      {
+        writer.vertex(*it);
       }
       
       writer.facet_end();
+      facet.clear();
     }
   }
 }
