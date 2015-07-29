@@ -215,6 +215,11 @@ public:
     std::copy(vertex_coords, vertex_coords+3, vertex_data);
     file.write((char*)vertex_data, sizeof(float)*3);
   }
+  
+  operator void*()
+  {
+    return file;
+  }
 };
 
 const float STLBinaryWriter::zero_vector[] = {0,0,0};
@@ -225,7 +230,10 @@ class STLAsciiWriter {
   
 public:
   STLAsciiWriter(const char* filename)
-    : file(filename) {}
+    : file(filename)
+  {
+    file << std::scientific;
+  }
   
   void file_start()
   {
@@ -254,6 +262,11 @@ public:
       << vertex_coords[0] << " "
       << vertex_coords[1] << " "
       << vertex_coords[2] << std::endl;
+  }
+  
+  operator void*()
+  {
+    return file;
   }
 };
 
@@ -295,8 +308,8 @@ viennagrid_error viennagrid_mesh_io_write_stl_binary(viennagrid_mesh_io mesh_io,
 {
   STLBinaryWriter writer(filename);
   
-//   if (!writer)
-//     return VIENNAGRID_ERROR_IO_CANNOT_OPEN_FILE;
+   if (!writer)
+     return VIENNAGRID_ERROR_IO_CANNOT_OPEN_FILE;
   
   viennagrid_mesh mesh;
   viennagrid_mesh_hierarchy mesh_hierarchy;
@@ -310,20 +323,29 @@ viennagrid_error viennagrid_mesh_io_write_stl_binary(viennagrid_mesh_io mesh_io,
   
   stl_write_facets<STLBinaryWriter>(mesh, writer);
   
-  return VIENNAGRID_SUCCESS;
+  if(writer)
+    return VIENNAGRID_SUCCESS;
+  else
+    return VIENNAGRID_ERROR_IO_WRITE_ERROR;
 }
 
 viennagrid_error viennagrid_mesh_io_write_stl_ascii(viennagrid_mesh_io mesh_io,
                                                 const char * filename)
 {
+  STLAsciiWriter writer(filename);
+  
+  if(!writer)
+    return VIENNAGRID_ERROR_IO_CANNOT_OPEN_FILE;
+  
   viennagrid_mesh mesh;
   viennagrid_mesh_io_mesh_get(mesh_io, &mesh);
-  
-  STLAsciiWriter writer(filename);
   
   writer.file_start();
   stl_write_facets<STLAsciiWriter>(mesh, writer);
   writer.file_end();
   
-  return VIENNAGRID_SUCCESS;
+  if(writer)
+    return VIENNAGRID_SUCCESS;
+  else
+    return VIENNAGRID_ERROR_IO_WRITE_ERROR;
 }

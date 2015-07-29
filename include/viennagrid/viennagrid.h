@@ -82,6 +82,7 @@ typedef struct viennagrid_mesh_io_ * viennagrid_mesh_io;
 #define VIENNAGRID_ERROR_IO_INVALID_HOLE_POINT_COUNT                  117
 #define VIENNAGRID_ERROR_IO_INVALID_SEED_POINT_COUNT                  118
 #define VIENNAGRID_ERROR_IO_UNSUPPORTED_ELEMENT_TYPE                  119
+#define VIENNAGRID_ERROR_IO_WRITE_ERROR                               120
 
 /* VIENNAGRID BOOL DEFINES */
 #define VIENNAGRID_TRUE                             1

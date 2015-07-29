@@ -46,41 +46,44 @@ int main()
   
   if(error == VIENNAGRID_SUCCESS)
   {
-    viennagrid_mesh_io_write_with_filetype(mesh_io, "stl_c_reader.stl", VIENNAGRID_FILETYPE_STL_ASCII);
+    error = viennagrid_mesh_io_write_with_filetype(mesh_io, "stl_c_reader.stl", VIENNAGRID_FILETYPE_STL_ASCII);
+  }
 
-    std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << " \\o/    Tutorial finished successfully!    \\o/ " << std::endl;
-    std::cout << "-----------------------------------------------" << std::endl;
-  }
-  else
+  switch(error)
   {
-    switch(error)
-    {
-      case VIENNAGRID_ERROR_IO_CANNOT_OPEN_FILE:
-        std::cout << "Error: Cannot open file!" << std::endl;
-        break;
-      case VIENNAGRID_ERROR_IO_FILE_EMPTY:
-        std::cout << "Error: File is empty!" << std::endl;
-        break;
-      case VIENNAGRID_ERROR_IO_EOF_ENCOUNTERED:
-        std::cout << "Error: End of file encountered!" << std::endl;
-        break;
-      case VIENNAGRID_ERROR_IO_EOF_WHILE_READING_VERTICES:
-        std::cout << "Error: End of file encountered while reading vertices!" << std::endl;
-        break;
-      case VIENNAGRID_ERROR_IO_VERTEX_DIMENSION_MISMATCH:
-        std::cout << "Error: Vertex dimension mismatch!" << std::endl;
-        break;
-      case VIENNAGRID_ERROR_IO_UNKNOWN_FILETYPE:
-        std::cout << "Error: Unknown filetype!" << std::endl;
-        break;
-      case VIENNAGRID_ERROR_IO_INVALID_VERTEX_COUNT:
-        std::cout << "Error: Invalid vertex count!" << std::endl;
-        break;
-      default:
-        std::cout << "Error: " << error << std::endl;
-    }
+    case VIENNAGRID_SUCCESS:
+      std::cout << "-----------------------------------------------" << std::endl;
+      std::cout << " \\o/    Tutorial finished successfully!    \\o/ " << std::endl;
+      std::cout << "-----------------------------------------------" << std::endl;
+      break;
+    case VIENNAGRID_ERROR_IO_CANNOT_OPEN_FILE:
+      std::cout << "Error: Cannot open file!" << std::endl;
+      break;
+    case VIENNAGRID_ERROR_IO_FILE_EMPTY:
+      std::cout << "Error: File is empty!" << std::endl;
+      break;
+    case VIENNAGRID_ERROR_IO_EOF_ENCOUNTERED:
+      std::cout << "Error: End of file encountered!" << std::endl;
+      break;
+    case VIENNAGRID_ERROR_IO_EOF_WHILE_READING_VERTICES:
+      std::cout << "Error: End of file encountered while reading vertices!" << std::endl;
+      break;
+    case VIENNAGRID_ERROR_IO_VERTEX_DIMENSION_MISMATCH:
+      std::cout << "Error: Vertex dimension mismatch!" << std::endl;
+      break;
+    case VIENNAGRID_ERROR_IO_UNKNOWN_FILETYPE:
+      std::cout << "Error: Unknown filetype!" << std::endl;
+      break;
+    case VIENNAGRID_ERROR_IO_INVALID_VERTEX_COUNT:
+      std::cout << "Error: Invalid vertex count!" << std::endl;
+      break;
+    case VIENNAGRID_ERROR_IO_WRITE_ERROR:
+      std::cout << "Error: Error while writing file!" << std::endl;
+      break;
+    default:
+      std::cout << "Error: " << error << std::endl;
   }
+
 
   return EXIT_SUCCESS;
 }
