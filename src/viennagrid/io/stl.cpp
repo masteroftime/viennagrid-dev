@@ -185,7 +185,6 @@ viennagrid_int create_unique_vertex(viennagrid_mesh mesh, IdMapType &id_map, con
 }
 
 class STLBinaryWriter {
-  static const float zero_vector[3];
   std::ofstream file;
   
 public:
@@ -201,6 +200,7 @@ public:
   }
   
   void facet_start(viennagrid_numeric* normal) {
+    // convert normal vector coordinates to 32bit floats and write them to file
     float normal_data[3];
     std::copy(normal, normal+3, normal_data);
     file.write((char*)normal_data, sizeof(float) * 3);
@@ -208,11 +208,13 @@ public:
   
   void facet_end()
   {
+    // we dont use the attribut byte count field so just write zeros
     file.write("\0\0", 2);
   }
   
   void vertex(const viennagrid_numeric* vertex_coords)
   {
+    // convert vertex coordinates to 32bit floats and write them to file
     float vertex_data[3];
     std::copy(vertex_coords, vertex_coords+3, vertex_data);
     file.write((char*)vertex_data, sizeof(float)*3);
@@ -220,11 +222,10 @@ public:
   
   operator void*()
   {
+    // to check for io errors we simply redirect to operator void* of our ofstream
     return file;
   }
 };
-
-const float STLBinaryWriter::zero_vector[] = {0,0,0};
 
 
 class STLAsciiWriter {
@@ -271,6 +272,7 @@ public:
   
   operator void*()
   {
+    // to check for io errors we simply redirect to operator void* of our ofstream
     return file;
   }
 };
@@ -286,22 +288,27 @@ void stl_write_facets(viennagrid_mesh mesh, Writer &writer)
   viennagrid_mesh_hierarchy mesh_hierarchy;
   viennagrid_mesh_mesh_hierarchy_get(mesh, &mesh_hierarchy);
   
+  // iterate over all elements in the mesh
   viennagrid_mesh_elements_get(mesh, 2, &id, &id_end);
   
   for(; id != id_end; ++id)
   {
+    // check if the current element is a triangle
     viennagrid_element_type_get(mesh_hierarchy, 2, *id, &type);
     
     if(type == VIENNAGRID_ELEMENT_TYPE_TRIANGLE)
     {
+      // get the vertex ids. The vertices of an element are the boundary elements with topological dimension 0.
       viennagrid_element_boundary_elements(mesh_hierarchy, 2, *id,  0, &boundary_id, &boundary_id_end);
       
+      // iterate over the vertices and get their coordinates
       for(; boundary_id != boundary_id_end; ++boundary_id)
       {
         viennagrid_mesh_hierarchy_vertex_coords_get(mesh_hierarchy, *boundary_id, &vertex_coords);
         facet.push_back(vertex_coords);
       }
       
+      // calculate the vectors of two sides of the triangle
       viennagrid_numeric a[] = {
         facet[1][0]-facet[0][0],
         facet[1][1]-facet[0][1],
@@ -313,18 +320,21 @@ void stl_write_facets(viennagrid_mesh mesh, Writer &writer)
         facet[2][2]-facet[0][2]
       };
       
+      // calculate the normal vector using cross product
       viennagrid_numeric n[] = {
         a[1]*b[2] - a[2]*b[1],
         a[2]*b[0] - a[0]*b[2],
         a[0]*b[1] - a[1]*b[0]
       };
       
+      // normalize the normal vector
       viennagrid_numeric len;
       len = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
       n[0] /= len;
       n[1] /= len;
       n[2] /= len;
       
+      //use the given writer to write the facet and vertex data to file
       writer.facet_start(n);
       
       for(std::vector<viennagrid_numeric*>::const_iterator it = facet.begin(); it != facet.end(); ++it)
@@ -351,8 +361,9 @@ viennagrid_error viennagrid_mesh_io_write_stl_binary(viennagrid_mesh_io mesh_io,
   viennagrid_mesh_io_mesh_get(mesh_io, &mesh);
   viennagrid_mesh_mesh_hierarchy_get(mesh, &mesh_hierarchy);
   
+  // get the number of triangles in our mesh because binary STL files need to have
+  // the number of facets written at the beginning of the file
   viennagrid_int tri_count;
-  
   viennagrid_mesh_hierarchy_element_count(mesh_hierarchy, VIENNAGRID_ELEMENT_TYPE_TRIANGLE, &tri_count);
   writer.header(tri_count);
   
