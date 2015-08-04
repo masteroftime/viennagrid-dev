@@ -12,6 +12,9 @@
 #include <boost/array.hpp>
 #include <boost/unordered_map.hpp>
 
+#include "viennagridpp/point.hpp"
+#include "viennagridpp/algorithm/cross_prod.hpp"
+
 typedef boost::array<viennagrid_numeric, 3>  VertexType;
 typedef boost::unordered_map<VertexType, viennagrid_int> IdMapType;
 
@@ -199,10 +202,10 @@ public:
     file.write((char*)&facet_count, 4);
   }
   
-  void facet_start(viennagrid_numeric* normal) {
+  void facet_start(const std::vector<viennagrid_numeric> &normal) {
     // convert normal vector coordinates to 32bit floats and write them to file
     float normal_data[3];
-    std::copy(normal, normal+3, normal_data);
+    std::copy(normal.begin(), normal.begin()+3, normal_data);
     file.write((char*)normal_data, sizeof(float) * 3);
   }
   
@@ -212,11 +215,11 @@ public:
     file.write("\0\0", 2);
   }
   
-  void vertex(const viennagrid_numeric* vertex_coords)
+  void vertex(const std::vector<viennagrid_numeric> &vertex_coords)
   {
     // convert vertex coordinates to 32bit floats and write them to file
     float vertex_data[3];
-    std::copy(vertex_coords, vertex_coords+3, vertex_data);
+    std::copy(vertex_coords.begin(), vertex_coords.begin()+3, vertex_data);
     file.write((char*)vertex_data, sizeof(float)*3);
   }
   
@@ -248,7 +251,7 @@ public:
     file << "endsolid" << std::endl;
   }
   
-  void facet_start(viennagrid_numeric* normal)
+  void facet_start(const std::vector<viennagrid_numeric> &normal)
   {
     file << "facet normal "
       << normal[0] << " "
@@ -262,7 +265,7 @@ public:
     file << "endloop" << std::endl << "endfacet" << std::endl;
   }
   
-  void vertex(const viennagrid_numeric* vertex_coords)
+  void vertex(const std::vector<viennagrid_numeric> &vertex_coords)
   {
     file << "vertex " 
       << vertex_coords[0] << " "
@@ -283,7 +286,7 @@ void stl_write_facets(viennagrid_mesh mesh, Writer &writer)
   viennagrid_int *id, *id_end, *boundary_id, *boundary_id_end;
   viennagrid_element_type type;
   viennagrid_numeric *vertex_coords;
-  std::vector<viennagrid_numeric*> facet;
+  std::vector<viennagrid::point> facet;
   
   viennagrid_mesh_hierarchy mesh_hierarchy;
   viennagrid_mesh_mesh_hierarchy_get(mesh, &mesh_hierarchy);
@@ -305,39 +308,16 @@ void stl_write_facets(viennagrid_mesh mesh, Writer &writer)
       for(; boundary_id != boundary_id_end; ++boundary_id)
       {
         viennagrid_mesh_hierarchy_vertex_coords_get(mesh_hierarchy, *boundary_id, &vertex_coords);
-        facet.push_back(vertex_coords);
+        facet.push_back(viennagrid::make_point(vertex_coords[0], vertex_coords[1], vertex_coords[2]));
       }
       
-      // calculate the vectors of two sides of the triangle
-      viennagrid_numeric a[] = {
-        facet[1][0]-facet[0][0],
-        facet[1][1]-facet[0][1],
-        facet[1][2]-facet[0][2]
-      };
-      viennagrid_numeric b[] = {
-        facet[2][0]-facet[0][0],
-        facet[2][1]-facet[0][1],
-        facet[2][2]-facet[0][2]
-      };
-      
-      // calculate the normal vector using cross product
-      viennagrid_numeric n[] = {
-        a[1]*b[2] - a[2]*b[1],
-        a[2]*b[0] - a[0]*b[2],
-        a[0]*b[1] - a[1]*b[0]
-      };
-      
-      // normalize the normal vector
-      viennagrid_numeric len;
-      len = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
-      n[0] /= len;
-      n[1] /= len;
-      n[2] /= len;
+      viennagrid::point n = viennagrid::cross_prod<viennagrid::point, viennagrid::point>(facet[1]-facet[0], facet[2]-facet[0]);
+      n.normalize();
       
       //use the given writer to write the facet and vertex data to file
       writer.facet_start(n);
       
-      for(std::vector<viennagrid_numeric*>::const_iterator it = facet.begin(); it != facet.end(); ++it)
+      for(std::vector<viennagrid::point>::const_iterator it = facet.begin(); it != facet.end(); ++it)
       {
         writer.vertex(*it);
       }
