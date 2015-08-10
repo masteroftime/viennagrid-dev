@@ -15,34 +15,20 @@
 #endif
 
 #include "viennagridpp/core.hpp"
-#include "viennagridpp/io/vtk_writer.hpp"
-#include "viennagridpp/algorithm/refine.hpp"
 
 int main()
 {
-  //
-  // Define the necessary types:
-  //
-
-  typedef viennagrid::mesh_hierarchy MeshHierarchyType;
-  typedef viennagrid::result_of::mesh<MeshHierarchyType>::type MeshType;
-
-
   std::cout << "-------------------------------------------------------------- " << std::endl;
   std::cout << "--       ViennaGrid tutorial: Read an STL File              -- " << std::endl;
   std::cout << "-------------------------------------------------------------- " << std::endl;
   std::cout << std::endl;
 
-  //
-  // Step 1: Instantiate the mesh and the segmentation and create 2 segments:
-  //
-  MeshType mesh;
   viennagrid_error error;
 
   viennagrid_mesh_io mesh_io;
   viennagrid_mesh_io_create(&mesh_io);
 
-  error = viennagrid_mesh_io_read( mesh_io, "../data/porsche.stl" );
+  error = viennagrid_mesh_io_read( mesh_io, "../data/testcube.stl" );
   
   if(error == VIENNAGRID_SUCCESS)
   {
