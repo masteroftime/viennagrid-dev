@@ -317,7 +317,6 @@ namespace {
   viennagrid_error stl_write(viennagrid_mesh_io mesh_io, const char* filename)
   {
     viennagrid_int *id, *id_end, *boundary_id, *boundary_id_end;
-    viennagrid_element_type type;
     viennagrid_numeric *vertex_coords;
     std::vector<viennagrid::point> facet;
     

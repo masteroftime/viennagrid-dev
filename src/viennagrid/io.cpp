@@ -227,6 +227,8 @@ viennagrid_error viennagrid_mesh_io_write_with_filetype(viennagrid_mesh_io mesh_
     case VIENNAGRID_FILETYPE_STL_BINARY:
       return viennagrid_mesh_io_write_stl_binary(mesh_io, filename);
   }
+  
+  return VIENNAGRID_ERROR_IO_UNKNOWN_FILETYPE;
 }
 
 
